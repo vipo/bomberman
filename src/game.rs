@@ -1,6 +1,6 @@
+use chrono::prelude::*;
 use std::cmp;
 use std::collections::HashMap;
-use std::time::Instant;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(u8)]
@@ -21,7 +21,7 @@ pub struct Game {
     pub width: usize,
     pub height: usize,
     landscape: HashMap<Coord, Cell>,
-    pub started: u128,
+    pub started: DateTime<Utc>,
 }
 
 type Template = &'static [&'static str];
@@ -101,7 +101,7 @@ pub fn new(template: &[&str]) -> Game {
         width: width,
         height: template.len(),
         landscape: m,
-        started: Instant::now().elapsed().as_nanos(),
+        started: Utc::now(),
     }
 }
 

@@ -12,3 +12,5 @@ serde = { version = "1.0", features = ["derive"] }
 chashmap = "2"
 uuid = { version = "0.8", features = ["v4"] }
 anyhow = "1"
+chrono = "0.4"
+serde_json = "1"

@@ -1,5 +1,6 @@
 use super::game::Game;
 use chashmap::CHashMap;
+use chrono::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -9,6 +10,11 @@ pub struct State {
     games: Arc<CHashMap<Uuid, Game>>,
     stack: Arc<Mutex<Vec<Uuid>>>,
     size: usize,
+}
+#[derive(Debug)]
+pub struct ActiveGame {
+    pub uuid: Uuid,
+    pub started: DateTime<Utc>,
 }
 
 impl State {
@@ -28,10 +34,17 @@ impl State {
         uuid
     }
 
-    pub fn list_games(&self) -> Vec<Uuid> {
+    pub fn list_games(&self) -> Vec<ActiveGame> {
         let stack = self.stack.lock().unwrap();
-        let mut result = stack.to_vec();
-        result.reverse();
+        let mut uuids = stack.to_vec();
+        uuids.reverse();
+        let mut result = vec![];
+        for uuid in uuids {
+            result.push(ActiveGame {
+                uuid: uuid,
+                started: self.games.get(&uuid).unwrap().started,
+            });
+        }
         result
     }
 }
