@@ -3,14 +3,12 @@ use std::cmp;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[repr(u8)]
 pub enum Cell {
     Empty,
     Wall,
     Brick,
     OpenGate,
     HiddenGate,
-    Bomber,
     Ghost,
 }
 
@@ -22,6 +20,40 @@ pub struct Game {
     pub height: usize,
     landscape: HashMap<Coord, Cell>,
     pub started: DateTime<Utc>,
+    pub updated: DateTime<Utc>,
+    bomberman: (usize, usize),
+    active: bool,
+}
+
+impl Game {
+    pub fn bomberman_up(&mut self) {
+        self.mv((-1, 0));
+        self.updated = Utc::now();
+    }
+    pub fn bomberman_down(&mut self) {
+        self.mv((1, 0));
+        self.updated = Utc::now();
+    }
+    pub fn bomberman_left(&mut self) {
+        self.mv((0, -1));
+        self.updated = Utc::now();
+    }
+    pub fn bomberman_right(&mut self) {
+        self.mv((1, 0));
+        self.updated = Utc::now();
+    }
+    fn mv(&mut self, offset: (i8, i8)) {
+        let new = Game::add(self.bomberman, offset);
+        if let Some(c) = self.landscape.get(&new) {
+            match c {
+                Cell::Empty => self.bomberman = new,
+                _ => {}
+            }
+        }
+    }
+    fn add(this: (usize, usize), that: (i8, i8)) -> (i8, i8) {
+        (this.0 + that.0, this.1 + that.1)
+    }
 }
 
 type Template = &'static [&'static str];
@@ -73,16 +105,26 @@ pub mod templates {
         "X                                                          X",
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"];
 
-    pub fn cell_from_char(c: char) -> Option<Cell> {
+    pub enum LandscapeFromChar {
+        Land { cell: Cell },
+        Bomber,
+        Unknown,
+    }
+
+    pub fn cell_from_char(c: char) -> LandscapeFromChar {
         match c {
-            ' ' => Some(Cell::Empty),
-            'X' => Some(Cell::Wall),
-            'B' => Some(Cell::Brick),
-            'O' => Some(Cell::OpenGate),
-            'H' => Some(Cell::HiddenGate),
-            'M' => Some(Cell::Bomber),
-            'G' => Some(Cell::Ghost),
-            _ => None,
+            ' ' => LandscapeFromChar::Land { cell: Cell::Empty },
+            'X' => LandscapeFromChar::Land { cell: Cell::Wall },
+            'B' => LandscapeFromChar::Land { cell: Cell::Brick },
+            'O' => LandscapeFromChar::Land {
+                cell: Cell::OpenGate,
+            },
+            'H' => LandscapeFromChar::Land {
+                cell: Cell::HiddenGate,
+            },
+            'M' => LandscapeFromChar::Bomber,
+            'G' => LandscapeFromChar::Land { cell: Cell::Ghost },
+            _ => LandscapeFromChar::Unknown,
         }
     }
 }
@@ -90,11 +132,18 @@ pub mod templates {
 pub fn new(template: &[&str]) -> Game {
     let mut m: HashMap<Coord, Cell> = HashMap::new();
     let mut width = 0;
+    let mut bomber = None;
     for h in 0..template.len() {
         let row: &str = template[h];
         width = cmp::max(width, row.len());
         for (w, c) in row.chars().enumerate() {
-            m.insert((h, w), templates::cell_from_char(c).unwrap());
+            match templates::cell_from_char(c) {
+                templates::LandscapeFromChar::Land { cell } => {
+                    m.insert((h, w), cell);
+                }
+                templates::LandscapeFromChar::Bomber => bomber = Some((h, w)),
+                templates::LandscapeFromChar::Unknown => panic!("Unknown char in template {}", c),
+            }
         }
     }
     Game {
@@ -102,6 +151,9 @@ pub fn new(template: &[&str]) -> Game {
         height: template.len(),
         landscape: m,
         started: Utc::now(),
+        updated: Utc::now(),
+        bomberman: bomber.unwrap(),
+        active: true,
     }
 }
 
