@@ -24,6 +24,19 @@ pub fn list_games(games: &Vec<crate::state::ActiveGame>) -> tide::Result {
         .build())
 }
 
-pub fn ok() -> tide::Result {
-    Ok(Response::builder(StatusCode::Ok).build())
+pub fn command(surrounding: &Option<crate::game::Surroundings>) -> tide::Result {
+    match surrounding {
+        None => Ok(Response::builder(StatusCode::Ok).build()),
+        Some(s) => Ok(Response::builder(StatusCode::Ok)
+            .body(Body::from_json(&json!({
+                "surrounding": json!({
+                    "bombermans": s.bombermans,
+                    "ghosts": s.ghosts,
+                    "wall": s.wall,
+                    "bricks": s.bricks,
+                    "gates": s.gates,
+                })
+            }))?)
+            .build()),
+    }
 }

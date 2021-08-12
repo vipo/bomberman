@@ -23,36 +23,82 @@ pub struct Game {
     pub updated: DateTime<Utc>,
     bomberman: (usize, usize),
     active: bool,
+    surrounding_size: usize,
 }
 
+pub struct Surroundings {
+    pub bricks: Vec<(usize, usize)>,
+    pub wall: Vec<(usize, usize)>,
+    pub bombermans: Vec<(usize, usize)>,
+    pub ghosts: Vec<(usize, usize)>,
+    pub gates: Vec<(usize, usize)>,
+}
 impl Game {
+    pub fn surrounding(&self) -> Surroundings {
+        let h_min = cmp::max(0, self.bomberman.0 as i8 - self.surrounding_size as i8) as usize;
+        let h_max = cmp::min(
+            self.height as i8 - 1,
+            self.bomberman.0 as i8 + self.surrounding_size as i8,
+        ) as usize;
+        let w_min = cmp::max(0, self.bomberman.1 as i8 - self.surrounding_size as i8) as usize;
+        let w_max = cmp::min(
+            self.width as i8 - 1,
+            self.bomberman.1 as i8 + self.surrounding_size as i8,
+        ) as usize;
+        let mut result = Surroundings {
+            bricks: vec![],
+            wall: vec![],
+            bombermans: vec![self.bomberman],
+            ghosts: vec![],
+            gates: vec![],
+        };
+        for h in h_min..=h_max {
+            for w in w_min..=w_max {
+                let coord = (h, w);
+                match self.landscape.get(&coord) {
+                    Some(Cell::Brick) => result.bricks.push(coord),
+                    Some(Cell::Wall) => result.wall.push(coord),
+                    Some(Cell::OpenGate) => result.gates.push(coord),
+                    Some(Cell::Ghost) => result.ghosts.push(coord),
+                    _ => {}
+                }
+            }
+        }
+        result
+    }
+
     pub fn bomberman_up(&mut self) {
         self.mv((-1, 0));
-        self.updated = Utc::now();
     }
     pub fn bomberman_down(&mut self) {
         self.mv((1, 0));
-        self.updated = Utc::now();
     }
     pub fn bomberman_left(&mut self) {
         self.mv((0, -1));
-        self.updated = Utc::now();
     }
     pub fn bomberman_right(&mut self) {
         self.mv((1, 0));
-        self.updated = Utc::now();
     }
     fn mv(&mut self, offset: (i8, i8)) {
-        let new = Game::add(self.bomberman, offset);
-        if let Some(c) = self.landscape.get(&new) {
-            match c {
-                Cell::Empty => self.bomberman = new,
-                _ => {}
+        let now = Utc::now();
+        if now > self.updated {
+            let new = Game::add(self.bomberman, offset);
+            if let Some(c) = self.landscape.get(&new) {
+                match c {
+                    Cell::Empty => {
+                        self.bomberman = new;
+                        self.updated = Utc::now();
+                    }
+                    _ => {}
+                }
             }
-        }
+        };
     }
-    fn add(this: (usize, usize), that: (i8, i8)) -> (i8, i8) {
-        (this.0 + that.0, this.1 + that.1)
+    fn add(this: (usize, usize), that: (i8, i8)) -> (usize, usize) {
+        (
+            (this.0 as i8 + that.0) as usize,
+            (this.1 as i8 + that.1) as usize,
+        )
     }
 }
 
@@ -141,7 +187,10 @@ pub fn new(template: &[&str]) -> Game {
                 templates::LandscapeFromChar::Land { cell } => {
                     m.insert((h, w), cell);
                 }
-                templates::LandscapeFromChar::Bomber => bomber = Some((h, w)),
+                templates::LandscapeFromChar::Bomber => {
+                    bomber = Some((h, w));
+                    m.insert((h, w), Cell::Empty);
+                }
                 templates::LandscapeFromChar::Unknown => panic!("Unknown char in template {}", c),
             }
         }
@@ -154,6 +203,7 @@ pub fn new(template: &[&str]) -> Game {
         updated: Utc::now(),
         bomberman: bomber.unwrap(),
         active: true,
+        surrounding_size: 7,
     }
 }
 
@@ -167,7 +217,7 @@ mod tests {
         assert_eq!(sut.height, 15);
         assert_eq!(sut.width, 15);
         assert_eq!(sut.landscape.len(), 15 * 15);
-        assert_eq!(sut.landscape.get(&(1, 1)).unwrap(), &Cell::Bomber);
+        assert_eq!(sut.bomberman, (1, 1));
         assert_eq!(sut.landscape.get(&(3, 13)).unwrap(), &Cell::Ghost);
         assert_eq!(sut.landscape.get(&(0, 13)).unwrap(), &Cell::Wall);
         assert_eq!(sut.landscape.get(&(1, 13)).unwrap(), &Cell::Brick);
@@ -180,7 +230,7 @@ mod tests {
         assert_eq!(sut.height, 15);
         assert_eq!(sut.width, 60);
         assert_eq!(sut.landscape.len(), 15 * 60);
-        assert_eq!(sut.landscape.get(&(1, 1)).unwrap(), &Cell::Bomber);
+        assert_eq!(sut.bomberman, (1, 1));
         assert_eq!(sut.landscape.get(&(1, 58)).unwrap(), &Cell::OpenGate);
     }
 }

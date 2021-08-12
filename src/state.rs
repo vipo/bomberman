@@ -36,13 +36,15 @@ impl State {
         uuid
     }
 
-    pub fn apply_to_game<F>(&self, uuid: Uuid, f: F)
+    pub fn apply_to_game<F, T>(&self, uuid: Uuid, default: T, f: F) -> T
     where
-        F: Fn(&mut Game) -> (),
+        F: Fn(&mut Game) -> T,
     {
         let mut games = self.games.write().unwrap();
         if let Some(game) = games.get_mut(&uuid) {
-            f(game);
+            f(game)
+        } else {
+            default
         }
     }
 

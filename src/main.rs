@@ -48,7 +48,7 @@ enum Direction {
 #[serde(tag = "name")]
 enum Commands {
     MoveBomberman { direction: Direction },
-    FetchMapArea { x: u8, y: u8 },
+    FetchSurrounding,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -80,16 +80,19 @@ async fn command(mut req: Request<state::State>) -> tide::Result {
     let uuid = Uuid::parse_str(uuid)?;
     let command: Command = req.body_json().await?;
     let state = req.state();
+    let mut surrounding: Option<game::Surroundings> = None;
     for command in flatten(&command) {
         match command {
             Commands::MoveBomberman { direction } => match direction {
-                Direction::Up => state.apply_to_game(uuid, |g| g.bomberman_up()),
-                Direction::Down => state.apply_to_game(uuid, |g| g.bomberman_down()),
-                Direction::Left => state.apply_to_game(uuid, |g| g.bomberman_left()),
-                Direction::Right => state.apply_to_game(uuid, |g| g.bomberman_right()),
+                Direction::Up => state.apply_to_game(uuid, (), |g| g.bomberman_up()),
+                Direction::Down => state.apply_to_game(uuid, (), |g| g.bomberman_down()),
+                Direction::Left => state.apply_to_game(uuid, (), |g| g.bomberman_left()),
+                Direction::Right => state.apply_to_game(uuid, (), |g| g.bomberman_right()),
             },
-            Commands::FetchMapArea { x, y } => {}
+            Commands::FetchSurrounding => {
+                surrounding = state.apply_to_game(uuid, None, |g| Some(g.surrounding()))
+            }
         }
     }
-    responses::ok()
+    responses::command(&surrounding)
 }
