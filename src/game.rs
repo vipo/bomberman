@@ -77,7 +77,7 @@ impl Game {
         self.mv((0, -1));
     }
     pub fn bomberman_right(&mut self) {
-        self.mv((1, 0));
+        self.mv((0, 1));
     }
     fn mv(&mut self, offset: (i8, i8)) {
         let now = Utc::now();
