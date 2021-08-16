@@ -372,6 +372,7 @@ dependencies = [
  "anyhow",
  "async-std",
  "chrono",
+ "rand 0.8.4",
  "serde",
  "serde_json",
  "tide",

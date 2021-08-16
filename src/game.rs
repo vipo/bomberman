@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use rand::prelude::*;
 use std::cmp;
 use std::collections::HashMap;
 
@@ -113,6 +114,13 @@ pub mod templates {
             "wide_1" => Some(WIDE_1),
             _ => None,
         }
+    }
+
+    pub fn random() -> Template {
+        let mut rng = rand::thread_rng();
+        let mut ts: Vec<Template> = vec![SMALL_1, WIDE_1];
+        ts.shuffle(&mut rng);
+        ts.get(0).unwrap()
     }
 
     #[rustfmt::skip]

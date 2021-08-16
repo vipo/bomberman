@@ -3,9 +3,19 @@ use tide::prelude::*;
 use tide::{Body, Response, StatusCode};
 use uuid::Uuid;
 
-pub fn new_game_created(uuid: &Uuid) -> tide::Result {
+#[derive(Debug)]
+pub struct NewGame {
+    pub uuid: Uuid,
+    pub width: usize,
+    pub height: usize,
+}
+
+pub fn new_game_created(new_game: &NewGame) -> tide::Result {
     Ok(Response::builder(StatusCode::Created)
-        .body(Body::from_json(&json!({"uuid": uuid.to_string()}))?)
+        .body(Body::from_json(&json!({
+                "uuid": new_game.uuid.to_string(),
+                "height": new_game.height,
+                "width": new_game.width}))?)
         .build())
 }
 

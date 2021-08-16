@@ -12,9 +12,10 @@ async fn main() -> tide::Result<()> {
     let state = state::new(1024);
     let mut app = tide::with_state(state);
     app.at("/game/new/:name").post(new_game);
+    app.at("/game/new/random").post(random_new);
     app.at("/game/").get(list_games);
     app.at("/game/:uuid").post(command);
-    app.listen("127.0.0.1:8080").await?;
+    app.listen("0.0.0.0:8080").await?;
     Ok(())
 }
 
@@ -22,13 +23,27 @@ fn not_found() -> Error {
     Error::new(StatusCode::NotFound, anyhow!("Not found"))
 }
 
+fn create_new_game(req: Request<state::State>, game: game::Game) -> tide::Result {
+    let (h, w) = (game.height, game.width);
+    let uuid = req.state().insert_and_evict(game);
+    responses::new_game_created(&responses::NewGame {
+        uuid: uuid,
+        width: w,
+        height: h,
+    })
+}
+
+async fn random_new(req: Request<state::State>) -> tide::Result {
+    let game = game::new(game::templates::random());
+    create_new_game(req, game)
+}
+
 async fn new_game(req: Request<state::State>) -> tide::Result {
     let name = req.param("name")?;
     let game = game::templates::by_name(name)
         .map(game::new)
         .ok_or(not_found())?;
-    let uuid = req.state().insert_and_evict(game);
-    responses::new_game_created(&uuid)
+    create_new_game(req, game)
 }
 
 async fn list_games(req: Request<state::State>) -> tide::Result {
