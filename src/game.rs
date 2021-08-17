@@ -82,13 +82,18 @@ impl Game {
     }
     fn mv(&mut self, offset: (i8, i8)) {
         let now = Utc::now();
-        if now > self.updated {
+        if now > self.updated && self.active {
             let new = Game::add(self.bomberman, offset);
             if let Some(c) = self.landscape.get(&new) {
                 match c {
                     Cell::Empty => {
                         self.bomberman = new;
                         self.updated = Utc::now();
+                    }
+                    Cell::OpenGate => {
+                        self.bomberman = new;
+                        self.updated = Utc::now();
+                        self.active = false;
                     }
                     _ => {}
                 }
