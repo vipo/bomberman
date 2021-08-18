@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
+use std::env;
 use tide::{Error, Request, StatusCode};
 use uuid::Uuid;
-use std::env;
 
 mod game;
 mod responses;
@@ -10,14 +10,15 @@ mod state;
 
 #[async_std::main]
 async fn main() -> tide::Result<()> {
-    let listen_on: String = env::var("LISTEN_ON").unwrap_or_else(|_| String::from("127.0.0.1:8080"));
+    let listen_on: String =
+        env::var("LISTEN_ON").unwrap_or_else(|_| String::from("127.0.0.1:8080"));
     println!("Listening on: {}", listen_on);
     let state = state::new(1024);
     let mut app = tide::with_state(state);
-    app.at("/game/new/:name").post(new_game);
-    app.at("/game/new/random").post(random_new);
-    app.at("/game/").get(list_games);
-    app.at("/game/:uuid").post(command);
+    app.at("/v1/game/new/random").post(random_new);
+    app.at("/v1/game/new/:name").post(new_game);
+    app.at("/v1/game/").get(list_games);
+    app.at("/v1/game/:uuid").post(command);
     app.listen(listen_on).await?;
     Ok(())
 }
