@@ -81,8 +81,8 @@ impl Game {
         self.mv((0, 1));
     }
     fn mv(&mut self, offset: (i8, i8)) {
-        let now = Utc::now();
-        if now > self.updated && self.active {
+        let now = Utc::now().timestamp();
+        if now > self.updated.timestamp() && self.active {
             let new = Game::add(self.bomberman, offset);
             if let Some(c) = self.landscape.get(&new) {
                 match c {
