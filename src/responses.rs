@@ -71,19 +71,31 @@ fn to_list(vs: &Vec<(usize, usize)>) -> List {
     result
 }
 
-pub fn command2(surrounding: &Option<crate::game::Surroundings>, bomb_status: &Option<crate::game::BombStatus>) -> tide::Result {
-    match surrounding {
-        None => Ok(Response::builder(StatusCode::Ok).build()),
-        Some(s) => Ok(Response::builder(StatusCode::Ok)
+pub fn command2(surrounding: &Option<crate::game::Surroundings>, bomb: &Option<crate::game::BombStatus>) -> tide::Result {
+    match (surrounding, bomb) {
+        (Some(s), Some(b)) => Ok(Response::builder(StatusCode::Ok)
             .body(Body::from_json(&json!({
-                "surrounding": json!({
-                    "bombermans": to_list(&s.bombermans),
-                    "ghosts": to_list(&s.ghosts),
-                    "wall": to_list(&s.wall),
-                    "bricks": to_list(&s.bricks),
-                    "gates": to_list(&s.gates),
-                })
-            }))?)
-            .build()),
+                "surrounding": surr_json(s),
+                "bomb": json!(b.coords)
+            }))?).build()),
+        (Some(s), None) => Ok(Response::builder(StatusCode::Ok)
+            .body(Body::from_json(&json!({
+                "surrounding": surr_json(s),
+            }))?).build()),
+        (None, Some(b)) => Ok(Response::builder(StatusCode::Ok)
+            .body(Body::from_json(&json!({
+                "bomb": json!(b.coords)
+            }))?).build()),
+        _ => Ok(Response::builder(StatusCode::Ok).build()),
     }
+}
+
+fn surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
+    json!({
+        "bombermans": to_list(&s.bombermans),
+        "ghosts": to_list(&s.ghosts),
+        "wall": to_list(&s.wall),
+        "bricks": to_list(&s.bricks),
+        "gates": to_list(&s.gates),
+    })
 }
