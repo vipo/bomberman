@@ -72,22 +72,11 @@ fn to_list(vs: &Vec<(usize, usize)>) -> List {
 }
 
 pub fn command2(surrounding: &Option<crate::game::Surroundings>, bomb: &Option<crate::game::BombStatus>) -> tide::Result {
-    match (surrounding, bomb) {
-        (Some(s), Some(b)) => Ok(Response::builder(StatusCode::Ok)
-            .body(Body::from_json(&json!({
-                "surrounding": surr_json(s),
-                "bomb": json!(b.coords)
-            }))?).build()),
-        (Some(s), None) => Ok(Response::builder(StatusCode::Ok)
-            .body(Body::from_json(&json!({
-                "surrounding": surr_json(s),
-            }))?).build()),
-        (None, Some(b)) => Ok(Response::builder(StatusCode::Ok)
-            .body(Body::from_json(&json!({
-                "bomb": json!(b.coords)
-            }))?).build()),
-        _ => Ok(Response::builder(StatusCode::Ok).build()),
-    }
+    Ok(Response::builder(StatusCode::Ok)
+        .body(Body::from_json(&json!({
+            "surrounding": surrounding.as_ref().map(|v| surr_json(v)),
+            "bomb": bomb.as_ref().map(|v| json!(v.coords)),
+        }))?).build())
 }
 
 fn surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
