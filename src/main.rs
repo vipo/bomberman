@@ -19,6 +19,7 @@ async fn main() -> tide::Result<()> {
     app.at("/v1/game/new/:name").post(new_game);
     app.at("/v1/game/").get(list_games);
     app.at("/v1/game/:uuid").post(command);
+    app.at("/v2/game/:uuid").post(command2);
     app.listen(listen_on).await?;
     Ok(())
 }
@@ -68,6 +69,8 @@ enum Direction {
 enum Commands {
     MoveBomberman { direction: Direction },
     FetchSurrounding,
+    PlantBomb,
+    FetchBombStatus,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -111,7 +114,38 @@ async fn command(mut req: Request<state::State>) -> tide::Result {
             Commands::FetchSurrounding => {
                 surrounding = state.apply_to_game(uuid, None, |g| Some(g.surrounding()))
             }
+            Commands::PlantBomb => (),
+            Commands::FetchBombStatus => (),
         }
     }
     responses::command(&surrounding)
+}
+
+async fn command2(mut req: Request<state::State>) -> tide::Result {
+    let uuid = req.param("uuid")?;
+    let uuid = Uuid::parse_str(uuid)?;
+    let command: Command = req.body_json().await?;
+    let state = req.state();
+    let mut surrounding: Option<game::Surroundings> = None;
+    let mut bomb_status: Option<game::BombStatus> = None;
+    for command in flatten(&command) {
+        match command {
+            Commands::MoveBomberman { direction } => match direction {
+                Direction::Up => state.apply_to_game(uuid, (), |g| g.bomberman_up()),
+                Direction::Down => state.apply_to_game(uuid, (), |g| g.bomberman_down()),
+                Direction::Left => state.apply_to_game(uuid, (), |g| g.bomberman_left()),
+                Direction::Right => state.apply_to_game(uuid, (), |g| g.bomberman_right()),
+            },
+            Commands::FetchSurrounding => {
+                surrounding = state.apply_to_game(uuid, None, |g| Some(g.surrounding()))
+            },
+            Commands::PlantBomb => {
+                state.apply_to_game(uuid, (), |g| g.plant_bomb())
+            },
+            Commands::FetchBombStatus => {
+                bomb_status = state.apply_to_game(uuid, None, |g| g.bomb_status())
+            },
+        }
+    }
+    responses::command2(&surrounding, &bomb_status)
 }

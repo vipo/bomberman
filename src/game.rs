@@ -25,6 +25,7 @@ pub struct Game {
     bomberman: (usize, usize),
     active: bool,
     surrounding_size: usize,
+    bomb: Option<(DateTime<Utc>, (usize, usize))>,
 }
 
 pub struct Surroundings {
@@ -34,7 +35,15 @@ pub struct Surroundings {
     pub ghosts: Vec<(usize, usize)>,
     pub gates: Vec<(usize, usize)>,
 }
+
+pub struct BombStatus {
+    pub coords: (usize, usize)
+}
+
 impl Game {
+    pub fn bomb_status(&self) -> Option<BombStatus> {
+        self.bomb.map(|b| BombStatus {coords: b.1})
+    }
     pub fn surrounding(&self) -> Surroundings {
         let h_min = cmp::max(0, self.bomberman.0 as i8 - self.surrounding_size as i8) as usize;
         let h_max = cmp::min(
@@ -70,15 +79,19 @@ impl Game {
 
     pub fn bomberman_up(&mut self) {
         self.mv((-1, 0));
+        self.blast();
     }
     pub fn bomberman_down(&mut self) {
         self.mv((1, 0));
+        self.blast();
     }
     pub fn bomberman_left(&mut self) {
         self.mv((0, -1));
+        self.blast();
     }
     pub fn bomberman_right(&mut self) {
         self.mv((0, 1));
+        self.blast();
     }
     fn mv(&mut self, offset: (i8, i8)) {
         let now = Utc::now().timestamp();
@@ -90,7 +103,7 @@ impl Game {
                         self.bomberman = new;
                         self.updated = Utc::now();
                     }
-                    Cell::OpenGate => {
+                    Cell::OpenGate | Cell::Ghost => {
                         self.bomberman = new;
                         self.updated = Utc::now();
                         self.active = false;
@@ -99,6 +112,40 @@ impl Game {
                 }
             }
         };
+    }
+    pub fn plant_bomb(&mut self) {
+        let now = Utc::now();
+        self.blast();
+        match self.bomb {
+            None => {self.bomb = Some((now, self.bomberman))}
+            Some(_) => () 
+        }
+    }
+    fn blast(&mut self) {
+        let now = Utc::now();
+        match self.bomb {
+            None => {}
+            Some((planted, coords)) => {
+                if now.timestamp() - planted.timestamp() >=4 {
+                    self.demolish(Game::add(coords, (0, 1)));
+                    self.demolish(Game::add(coords, (1, 1)));
+                    self.demolish(Game::add(coords, (0, -1)));
+                    self.demolish(Game::add(coords, (-1, -1)));
+                    self.bomb = None;
+                }
+            }
+        }
+    }
+    fn demolish(&mut self, coords: (usize, usize)) {
+        if let Some(c) = self.landscape.get_mut(&coords) {
+            match c {
+                Cell::Brick | Cell::Ghost => {
+                    *c = Cell::Empty;
+                    self.updated = Utc::now();
+                }
+                _ => {}
+            }
+        }
     }
     fn add(this: (usize, usize), that: (i8, i8)) -> (usize, usize) {
         (
@@ -217,6 +264,7 @@ pub fn new(template: &[&str]) -> Game {
         bomberman: bomber.unwrap(),
         active: true,
         surrounding_size: 7,
+        bomb: None,
     }
 }
 

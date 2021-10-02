@@ -50,3 +50,41 @@ pub fn command(surrounding: &Option<crate::game::Surroundings>) -> tide::Result 
             .build()),
     }
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct List {
+    pub head: Option<(usize, usize)>,
+    pub tail: Option<Box<List>>,
+}
+
+fn to_list(vs: &Vec<(usize, usize)>) -> List {
+    let mut result = List {
+        head: None,
+        tail: None,
+    };
+    for v in vs {
+        result = List {
+            head: Some((v.0, v.1)),
+            tail: Some(Box::new(result)),
+        }
+    }
+    result
+}
+
+pub fn command2(surrounding: &Option<crate::game::Surroundings>, bomb: &Option<crate::game::BombStatus>) -> tide::Result {
+    Ok(Response::builder(StatusCode::Ok)
+        .body(Body::from_json(&json!({
+            "surrounding": surrounding.as_ref().map(|v| surr_json(v)),
+            "bomb": bomb.as_ref().map(|v| json!(v.coords)),
+        }))?).build())
+}
+
+fn surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
+    json!({
+        "bombermans": to_list(&s.bombermans),
+        "ghosts": to_list(&s.ghosts),
+        "wall": to_list(&s.wall),
+        "bricks": to_list(&s.bricks),
+        "gates": to_list(&s.gates),
+    })
+}
