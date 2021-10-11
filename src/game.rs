@@ -37,12 +37,12 @@ pub struct Surroundings {
 }
 
 pub struct BombStatus {
-    pub coords: (usize, usize)
+    pub coords: (usize, usize),
 }
 
 impl Game {
     pub fn bomb_status(&self) -> Option<BombStatus> {
-        self.bomb.map(|b| BombStatus {coords: b.1})
+        self.bomb.map(|b| BombStatus { coords: b.1 })
     }
     pub fn surrounding(&self) -> Surroundings {
         let h_min = cmp::max(0, self.bomberman.0 as i8 - self.surrounding_size as i8) as usize;
@@ -94,8 +94,8 @@ impl Game {
         self.blast();
     }
     fn mv(&mut self, offset: (i8, i8)) {
-        let now = Utc::now().timestamp();
-        if now > self.updated.timestamp() && self.active {
+        let now = Utc::now().timestamp_millis();
+        if now - self.updated.timestamp_millis() > 200 && self.active {
             let new = Game::add(self.bomberman, offset);
             if let Some(c) = self.landscape.get(&new) {
                 match c {
@@ -117,8 +117,8 @@ impl Game {
         let now = Utc::now();
         self.blast();
         match self.bomb {
-            None => {self.bomb = Some((now, self.bomberman))}
-            Some(_) => () 
+            None => self.bomb = Some((now, self.bomberman)),
+            Some(_) => (),
         }
     }
     fn blast(&mut self) {
@@ -126,7 +126,7 @@ impl Game {
         match self.bomb {
             None => {}
             Some((planted, coords)) => {
-                if now.timestamp() - planted.timestamp() >=4 {
+                if now.timestamp() - planted.timestamp() >= 4 {
                     self.demolish(Game::add(coords, (0, 1)));
                     self.demolish(Game::add(coords, (1, 1)));
                     self.demolish(Game::add(coords, (0, -1)));
