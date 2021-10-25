@@ -128,9 +128,9 @@ impl Game {
             Some((planted, coords)) => {
                 if now.timestamp() - planted.timestamp() >= 4 {
                     self.demolish(Game::add(coords, (0, 1)));
-                    self.demolish(Game::add(coords, (1, 1)));
+                    self.demolish(Game::add(coords, (1, 0)));
                     self.demolish(Game::add(coords, (0, -1)));
-                    self.demolish(Game::add(coords, (-1, -1)));
+                    self.demolish(Game::add(coords, (-1, 0)));
                     self.bomb = None;
                 }
             }
@@ -180,7 +180,7 @@ pub mod templates {
         "XXXXXXXXXXXXXXX",
         "XM    BBBBBBBBX",
         "XBXBX X X X X X",
-        "X   B B   B  GX",
+        "X   B B   B   X",
         "X X X X X XBXBX",
         "X   B   B     X",
         "X X XBXBX XBXBX",
