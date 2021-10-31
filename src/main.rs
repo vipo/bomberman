@@ -118,7 +118,7 @@ async fn command(mut req: Request<state::State>) -> tide::Result {
             }
             Commands::PlantBomb => (),
             Commands::FetchBombStatus => (),
-            Commands::FetchBombSurroundings => (),
+            Commands::FetchBombSurrounding => (),
         }
     }
     responses::command(&surrounding)
@@ -146,7 +146,7 @@ async fn command2(mut req: Request<state::State>) -> tide::Result {
             Commands::FetchBombStatus => {
                 bomb_status = state.apply_to_game(uuid, None, |g| g.bomb_status())
             }
-            Commands::FetchBombSurroundings => (),
+            Commands::FetchBombSurrounding => (),
         }
     }
     responses::command2(&surrounding, &bomb_status)
