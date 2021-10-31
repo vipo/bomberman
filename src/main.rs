@@ -70,7 +70,7 @@ enum Direction {
 enum Commands {
     MoveBomberman { direction: Direction },
     FetchSurrounding,
-    FetchBombSurroundings,
+    FetchBombSurrounding,
     PlantBomb,
     FetchBombStatus,
 }
@@ -175,7 +175,7 @@ async fn command3(mut req: Request<state::State>) -> tide::Result {
             Commands::FetchBombStatus => {
                 bomb_status = state.apply_to_game(uuid, None, |g| g.bomb_status())
             }
-            Commands::FetchBombSurroundings => {
+            Commands::FetchBombSurrounding => {
                 bomb_surroundings = state.apply_to_game(uuid, None, |g| g.bomb_surrounding())
             }
         }
