@@ -71,12 +71,30 @@ fn to_list(vs: &Vec<(usize, usize)>) -> List {
     result
 }
 
-pub fn command2(surrounding: &Option<crate::game::Surroundings>, bomb: &Option<crate::game::BombStatus>) -> tide::Result {
+pub fn command2(
+    surrounding: &Option<crate::game::Surroundings>,
+    bomb: &Option<crate::game::BombStatus>,
+) -> tide::Result {
     Ok(Response::builder(StatusCode::Ok)
         .body(Body::from_json(&json!({
             "surrounding": surrounding.as_ref().map(|v| surr_json(v)),
             "bomb": bomb.as_ref().map(|v| json!(v.coords)),
-        }))?).build())
+        }))?)
+        .build())
+}
+
+pub fn command3(
+    surrounding: &Option<crate::game::Surroundings>,
+    bomb: &Option<crate::game::BombStatus>,
+    bomb_surrounding: &Option<crate::game::Surroundings>,
+) -> tide::Result {
+    Ok(Response::builder(StatusCode::Ok)
+        .body(Body::from_json(&json!({
+            "surrounding": surrounding.as_ref().map(|v| surr_json(v)),
+            "bomb": bomb.as_ref().map(|v| json!(v.coords)),
+            "bomb_surrounding": bomb_surrounding.as_ref().map(|v| bomb_surr_json(v)),
+        }))?)
+        .build())
 }
 
 fn surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
@@ -86,5 +104,12 @@ fn surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
         "wall": to_list(&s.wall),
         "bricks": to_list(&s.bricks),
         "gates": to_list(&s.gates),
+    })
+}
+
+fn bomb_surr_json(s: &crate::game::Surroundings) -> serde_json::Value {
+    json!({
+        "wall": s.wall,
+        "bricks": s.bricks,
     })
 }

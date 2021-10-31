@@ -77,6 +77,36 @@ impl Game {
         result
     }
 
+    pub fn bomb_surrounding(&self) -> Option<Surroundings> {
+        match self.bomb {
+            None => None,
+            Some((_, c)) => {
+                let h_min = cmp::max(0, c.0 as i8 - 1) as usize;
+                let h_max = cmp::min(self.height as i8 - 1, c.0 as i8 + 1) as usize;
+                let w_min = cmp::max(0, c.1 as i8 - 1) as usize;
+                let w_max = cmp::min(self.width as i8 - 1, c.1 as i8 + 1 as i8) as usize;
+                let mut result = Surroundings {
+                    bricks: vec![],
+                    wall: vec![],
+                    bombermans: vec![self.bomberman],
+                    ghosts: vec![],
+                    gates: vec![],
+                };
+                for h in h_min..=h_max {
+                    for w in w_min..=w_max {
+                        let coord = (h, w);
+                        match self.landscape.get(&coord) {
+                            Some(Cell::Brick) => result.bricks.push(coord),
+                            Some(Cell::Wall) => result.wall.push(coord),
+                            _ => {}
+                        }
+                    }
+                }
+                Some(result)
+            }
+        }
+    }
+
     pub fn bomberman_up(&mut self) {
         self.mv((-1, 0));
         self.blast();
