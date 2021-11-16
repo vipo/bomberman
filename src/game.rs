@@ -41,10 +41,12 @@ pub struct BombStatus {
 }
 
 impl Game {
-    pub fn bomb_status(&self) -> Option<BombStatus> {
+    pub fn bomb_status(&mut self) -> Option<BombStatus> {
+        self.blast();
         self.bomb.map(|b| BombStatus { coords: b.1 })
     }
-    pub fn surrounding(&self) -> Surroundings {
+    pub fn surrounding(&mut self) -> Surroundings {
+        self.blast();
         let h_min = cmp::max(0, self.bomberman.0 as i8 - self.surrounding_size as i8) as usize;
         let h_max = cmp::min(
             self.height as i8 - 1,
@@ -77,7 +79,8 @@ impl Game {
         result
     }
 
-    pub fn bomb_surrounding(&self) -> Option<Surroundings> {
+    pub fn bomb_surrounding(&mut self) -> Option<Surroundings> {
+        self.blast();
         match self.bomb {
             None => None,
             Some((_, c)) => {
